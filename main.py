@@ -25,6 +25,9 @@ def main():
         if hand_tracker.is_hand_hist_created:
             hand_tracker.process(frame)
             
+            hand_tracker.draw_farthestpoint(frame, [0, 255, 255])
+            hand_tracker.draw_tips(frame, [255, 0, 255])
+            
         elif pressed_key & 0xFF == ord('z'):
             hand_tracker.calculate_hand_histogram(frame)
         else:
