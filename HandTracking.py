@@ -41,7 +41,6 @@ class hand_tracker:
 
 
     def calculate_hand_histogram(self, frame):
-
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         roi = np.zeros([90, 10, 3], dtype=hsv_frame.dtype)
 
@@ -86,13 +85,19 @@ class hand_tracker:
         if defects is not None and centroid is not None:
             s = defects[:, 0][:, 0]
             cx, cy = centroid
-
-            x = np.array(contour[s][:, 0][:, 0], dtype=np.float)
-            y = np.array(contour[s][:, 0][:, 1], dtype=np.float)
-
+            
+            points = np.array([contour[point] for point in s if contour[point][0][1] <= cy])
+            points = points[:, 0, :]
+            
+            x = np.array(points[:, 0], dtype=np.float)
+            y = np.array(points[:, 1], dtype=np.float)
+    
             xp = cv2.pow(cv2.subtract(x, cx), 2)
             yp = cv2.pow(cv2.subtract(y, cy), 2)
-            dist = cv2.sqrt(cv2.add(xp, yp))
+            
+            kk = cv2.add(xp, yp)
+            
+            dist = cv2.sqrt(kk)
 
             dist_max_i = np.argmax(dist)
 
@@ -133,7 +138,7 @@ class hand_tracker:
 
 
     def draw_farthestpoint(self, frame, color):
-        cv2.circle(frame, self.cnt_centroid, 5, color, -1)
+        cv2.circle(frame, self.cnt_centroid, 10, color, 2)
         
         if self.traverse_point is not None:
             for i in range(len(self.traverse_point)):
@@ -163,7 +168,7 @@ class hand_tracker:
             
             #print("Centroid : " + str(cnt_centroid) + ", farthest Point : " + str(far_point))
             
-            if len(self.traverse_point) < 20:
+            if len(self.traverse_point) < 10:
                 self.traverse_point.append(self.far_point)
             else:
                 self.traverse_point.pop(0)
