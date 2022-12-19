@@ -144,6 +144,9 @@ class hand_tracker:
             for i in range(len(self.traverse_point)):
                 cv2.circle(frame, self.traverse_point[i], int(5 - (5 * i * 3) / 100), color, -1)
 
+    def draw_convex_hull(self,frame,contours):
+        hull = [cv2.convexHull(c) for c in contours]
+        cv2.drawContours(frame,hull,-1,(255,255,255))
 
     def process(self, frame):
         self.hist_mask_image = self.hist_masking(frame, self.hand_hist)
@@ -152,6 +155,8 @@ class hand_tracker:
         self.hist_mask_image = cv2.dilate(self.hist_mask_image, None, iterations=2)
 
         self.contour_list = self.__contours(self.hist_mask_image)
+
+        self.draw_convex_hull(frame=frame,contours=self.contour_list)
         
         if len(self.contour_list) <= 0:
             return
