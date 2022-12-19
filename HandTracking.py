@@ -8,6 +8,9 @@ class hand_tracker:
         
         self.traverse_point = []
         
+        self.contour_area = 0
+        self.hull_area = 0
+        
         self.rows, self.cols, _ = frame.shape
         
         self.hand_rect_one_x = np.array(
@@ -63,6 +66,8 @@ class hand_tracker:
         cv2.filter2D(dst, -1, disc, dst)
 
         ret, thresh = cv2.threshold(dst, 150, 255, cv2.THRESH_BINARY)
+        
+        thresh = cv2.erode(thresh, (3,3), iterations=4)
         
         # thresh = cv2.dilate(thresh, None, iterations=5)
 
@@ -123,7 +128,7 @@ class hand_tracker:
                 angle = np.arccos((b ** 2 + c ** 2 - a ** 2) / (2 * b * c))  #      cosine theorem
                 if angle <= np.pi / 2:  # angle less than 90 degree, treat as fingers
                     cnt += 1
-                    tips.append(far)
+                    tips.append(start)
             if cnt > 0:
                 cnt = cnt+1
             return tips, cnt
@@ -134,8 +139,7 @@ class hand_tracker:
         for tip in self.tips:
             cv2.circle(frame, tip, 4, color, -1)
         
-        cv2.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv2.LINE_AA)
-
+        #cv2.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv2.LINE_AA)
 
     def draw_farthestpoint(self, frame, color):
         cv2.circle(frame, self.cnt_centroid, 10, color, 2)
@@ -144,9 +148,12 @@ class hand_tracker:
             for i in range(len(self.traverse_point)):
                 cv2.circle(frame, self.traverse_point[i], int(5 - (5 * i * 3) / 100), color, -1)
 
-    def draw_convex_hull(self,frame,contours):
-        hull = [cv2.convexHull(c) for c in contours]
+    def draw_convex_hull(self,frame):
+        hull = [cv2.convexHull(self.max_cont)]
         cv2.drawContours(frame,hull,-1,(255,255,255))
+        
+    def draw_contours(self,frame):
+        cv2.drawContours(frame,[self.max_cont],-1,(255,255,0), 3)
 
     def process(self, frame):
         self.hist_mask_image = self.hist_masking(frame, self.hand_hist)
@@ -155,8 +162,6 @@ class hand_tracker:
         self.hist_mask_image = cv2.dilate(self.hist_mask_image, None, iterations=2)
 
         self.contour_list = self.__contours(self.hist_mask_image)
-
-        self.draw_convex_hull(frame=frame,contours=self.contour_list)
         
         if len(self.contour_list) <= 0:
             return
@@ -168,16 +173,27 @@ class hand_tracker:
         if self.max_cont is not None:
             hull = cv2.convexHull(self.max_cont, returnPoints=False)
             defects = cv2.convexityDefects(self.max_cont, hull)
+            
+            contour_area = cv2.contourArea(self.max_cont)
+            hull_area = cv2.contourArea(cv2.convexHull(self.max_cont))
+            
+            if self.hull_area > 0:
+                self.hull_area = (self.hull_area + hull_area) / 2
+            else:
+                self.hull_area = hull_area
+            
+            if self.contour_area > 0:
+                self.contour_area = (self.contour_area + contour_area) / 2
+            else:
+                self.contour_area = contour_area
+                
+            cv2.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
+            cv2.putText(frame, "average : " + str(self.contour_area/self.hull_area), (0, 200), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
             self.far_point = self.__farthest_point(defects, self.max_cont, self.cnt_centroid)
             self.tips, self.tip_cnt = self.__tips(defects, self.max_cont)
-            
-            #print("Centroid : " + str(cnt_centroid) + ", farthest Point : " + str(far_point))
             
             if len(self.traverse_point) < 10:
                 self.traverse_point.append(self.far_point)
             else:
                 self.traverse_point.pop(0)
                 self.traverse_point.append(self.far_point)
-
-            #self.draw_farthestpoint(frame, self.traverse_point)
-            #self.draw_tips(frame, tips, cnt)
