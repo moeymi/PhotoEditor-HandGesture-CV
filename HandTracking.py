@@ -6,32 +6,38 @@ class hand_tracker:
         self.total_rectangle = 9
         self.is_hand_hist_created = False
         
-        self.traverse_point = []
+        self.far_points_history = []
         
         self.contour_area = 0
         self.hull_area = 0
         
-        self.rows, self.cols, _ = frame.shape
+        self.hand_center = 0
+        
+        self.__rows, self.__cols, _ = frame.shape
         
         self.hand_rect_one_x = np.array(
-            [6 * self.rows / 20, 6 * self.rows / 20, 6 * self.rows / 20, 9 * self.rows / 20, 9 * self.rows / 20, 9 * self.rows / 20, 12 * self.rows / 20,
-            12 * self.rows / 20, 12 * self.rows / 20], dtype=np.uint32)
+            [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 12 * self.__rows / 20,
+            12 * self.__rows / 20, 12 * self.__rows / 20], dtype=np.uint32)
 
         self.hand_rect_one_y = np.array(
-            [9 * self.cols / 20, 10 * self.cols / 20, 11 * self.cols / 20, 9 * self.cols / 20, 10 * self.cols / 20, 11 * self.cols / 20, 9 * self.cols / 20,
-            10 * self.cols / 20, 11 * self.cols / 20], dtype=np.uint32)
+            [9 * self.__cols / 20, 10 * self.__cols / 20, 11 * self.__cols / 20, 9 * self.__cols / 20, 10 * self.__cols / 20, 11 * self.__cols / 20, 9 * self.__cols / 20,
+            10 * self.__cols / 20, 11 * self.__cols / 20], dtype=np.uint32)
+        
+    
+    # Drawing
+    def draw_farthestpoint(self, frame, color):
+        cv.circle(frame, self.hand_center, 10, color, 2)
+        
+        if self.far_points_history is not None:
+            for i in range(len(self.far_points_history)):
+                cv.circle(frame, self.far_points_history[i], int(5 - (5 * i * 3) / 100), color, -1)
 
-    def rescale_frame(self, frame, wpercent=130, hpercent=130):
-        width = int(frame.shape[1] * wpercent / 200)
-        height = int(frame.shape[0] * hpercent / 200)
-        return cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
-
-
-    def __contours(self, hist_mask_image):
-        gray_hist_mask_image = cv.cvtColor(hist_mask_image, cv.COLOR_BGR2GRAY)
-        _, thresh = cv.threshold(gray_hist_mask_image, 0, 255, 0)
-        cont, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        return cont
+    def draw_convex_hull(self,frame):
+        hull = [cv.convexHull(self.hand_contour)]
+        cv.drawContours(frame,hull,-1,(255,255,255))
+        
+    def draw_contours(self,frame):
+        cv.drawContours(frame,[self.hand_contour],-1,(255,255,0), 3)
 
     def draw_rect(self, frame):
         self.hand_rect_two_x = self.hand_rect_one_x + 10
@@ -41,6 +47,18 @@ class hand_tracker:
             cv.rectangle(frame, (self.hand_rect_one_y[i], self.hand_rect_one_x[i]),
                         (self.hand_rect_two_y[i], self.hand_rect_two_x[i]),
                         (0, 255, 0), 1)
+            
+    def rescale_frame(self, frame, wpercent=130, hpercent=130):
+        width = int(frame.shape[1] * wpercent / 200)
+        height = int(frame.shape[0] * hpercent / 200)
+        return cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
+
+
+    def __get_contours(self, hist_mask_image):
+        gray_hist_mask_image = cv.cvtColor(hist_mask_image, cv.COLOR_BGR2GRAY)
+        _, thresh = cv.threshold(gray_hist_mask_image, 0, 255, 0)
+        cont, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        return cont
 
 
     def calculate_hand_histogram(self, frame):
@@ -57,7 +75,7 @@ class hand_tracker:
         self.is_hand_hist_created = True
 
 
-    def hist_masking(self, frame, hist):
+    def __get_hist_mask(self, frame, hist):
         hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
         dst = cv.calcBackProject([hsv], [0, 1], hist, [0, 180, 0, 256], 1)
@@ -65,7 +83,7 @@ class hand_tracker:
         disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (31, 31))
         cv.filter2D(dst, -1, disc, dst)
 
-        ret, thresh = cv.threshold(dst, 150, 255, cv.THRESH_BINARY)
+        _, thresh = cv.threshold(dst, 150, 255, cv.THRESH_BINARY)
         
         thresh = cv.erode(thresh, (3,3), iterations=4)
         
@@ -76,7 +94,7 @@ class hand_tracker:
         return cv.bitwise_and(frame, thresh)
 
 
-    def __centroid(self, max_contour):
+    def __get_centroid(self, max_contour):
         moment = cv.moments(max_contour)
         if moment['m00'] != 0:
             cx = int(moment['m10'] / moment['m00'])
@@ -86,7 +104,7 @@ class hand_tracker:
             return None
 
 
-    def __farthest_point(self, defects, contour, centroid):
+    def __get_farthest_point(self, defects, contour, centroid):
         if defects is not None and centroid is not None:
             s = defects[:, 0][:, 0]
             cx, cy = centroid
@@ -105,7 +123,7 @@ class hand_tracker:
             dist = cv.sqrt(kk)
 
             dist_max_i = np.argmax(dist)
-
+            
             if dist_max_i < len(s):
                 farthest_defect = s[dist_max_i]
                 farthest_point = tuple(contour[farthest_defect][0])
@@ -113,7 +131,7 @@ class hand_tracker:
             else:
                 return None
             
-    def __tips(self, defects, contours):
+    def __get_tips(self, defects, contours):
         if defects is not None:
             cnt = 0
             tips = []
@@ -129,6 +147,7 @@ class hand_tracker:
                 if angle <= np.pi / 2:  # angle less than 90 degree, treat as fingers
                     cnt += 1
                     tips.append(start)
+            tips = np.array(tips)
             if cnt > 0:
                 cnt = cnt+1
             return tips, cnt
@@ -141,59 +160,47 @@ class hand_tracker:
         
         #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
 
-    def draw_farthestpoint(self, frame, color):
-        cv.circle(frame, self.cnt_centroid, 10, color, 2)
-        
-        if self.traverse_point is not None:
-            for i in range(len(self.traverse_point)):
-                cv.circle(frame, self.traverse_point[i], int(5 - (5 * i * 3) / 100), color, -1)
-
-    def draw_convex_hull(self,frame):
-        hull = [cv.convexHull(self.max_cont)]
-        cv.drawContours(frame,hull,-1,(255,255,255))
-        
-    def draw_contours(self,frame):
-        cv.drawContours(frame,[self.max_cont],-1,(255,255,0), 3)
-
-    def process(self, frame):
-        self.hist_mask_image = self.hist_masking(frame, self.hand_hist)
+    def process(self, frame, interpolate=True):
+        self.hist_mask_image = self.__get_hist_mask(frame, self.hand_hist)
 
         self.hist_mask_image = cv.erode(self.hist_mask_image, None, iterations=2)
         self.hist_mask_image = cv.dilate(self.hist_mask_image, None, iterations=2)
 
-        self.contour_list = self.__contours(self.hist_mask_image)
+        self.contour_list = self.__get_contours(self.hist_mask_image)
         
         if len(self.contour_list) <= 0:
             return
         
-        self.max_cont = max(self.contour_list, key=cv.contourArea)
+        self.hand_contour = max(self.contour_list, key=cv.contourArea)
         
-        self.cnt_centroid = self.__centroid(self.max_cont)
-
-        if self.max_cont is not None:
-            hull = cv.convexHull(self.max_cont, returnPoints=False)
-            defects = cv.convexityDefects(self.max_cont, hull)
+        self.hand_center = self.__get_centroid(self.hand_contour)
             
-            contour_area = cv.contourArea(self.max_cont)
-            hull_area = cv.contourArea(cv.convexHull(self.max_cont))
+        if self.hand_contour is not None:
+            hull = cv.convexHull(self.hand_contour, returnPoints=False)
+            defects = cv.convexityDefects(self.hand_contour, hull)
             
-            if self.hull_area > 0:
+            contour_area = cv.contourArea(self.hand_contour)
+            hull_area = cv.contourArea(cv.convexHull(self.hand_contour))
+            
+            if self.hull_area > 0 and interpolate:
                 self.hull_area = (self.hull_area + hull_area) / 2
             else:
                 self.hull_area = hull_area
             
-            if self.contour_area > 0:
+            if self.contour_area > 0 and interpolate:
                 self.contour_area = (self.contour_area + contour_area) / 2
             else:
                 self.contour_area = contour_area
                 
             cv.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
             cv.putText(frame, "average : " + str(self.contour_area/self.hull_area), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
-            self.far_point = self.__farthest_point(defects, self.max_cont, self.cnt_centroid)
-            self.tips, self.tip_cnt = self.__tips(defects, self.max_cont)
+           
+
+            self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)
+            self.tips, self.tip_cnt = self.__get_tips(defects, self.hand_contour)
             
-            if len(self.traverse_point) < 10:
-                self.traverse_point.append(self.far_point)
+            if len(self.far_points_history) < 10:
+                self.far_points_history.append(self.far_point)
             else:
-                self.traverse_point.pop(0)
-                self.traverse_point.append(self.far_point)
+                self.far_points_history.pop(0)
+                self.far_points_history.append(self.far_point)
