@@ -35,7 +35,6 @@ def main():
             hand_tracker.draw_rect(frame)
 
         cv2.imshow("Live Feed", hand_tracker.rescale_frame(frame))
-        cv2.imshow("Normalized Feed", hand_tracker.rescale_frame(norm))
 
         if pressed_key == 27:
             break
