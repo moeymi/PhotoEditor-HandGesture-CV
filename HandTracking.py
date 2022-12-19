@@ -1,4 +1,4 @@
-import cv2
+import cv2 as cv
 import numpy as np
 class hand_tracker:
     
@@ -24,13 +24,13 @@ class hand_tracker:
     def rescale_frame(self, frame, wpercent=130, hpercent=130):
         width = int(frame.shape[1] * wpercent / 200)
         height = int(frame.shape[0] * hpercent / 200)
-        return cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
+        return cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
 
 
     def __contours(self, hist_mask_image):
-        gray_hist_mask_image = cv2.cvtColor(hist_mask_image, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray_hist_mask_image, 0, 255, 0)
-        cont, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        gray_hist_mask_image = cv.cvtColor(hist_mask_image, cv.COLOR_BGR2GRAY)
+        _, thresh = cv.threshold(gray_hist_mask_image, 0, 255, 0)
+        cont, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         return cont
 
     def draw_rect(self, frame):
@@ -38,46 +38,46 @@ class hand_tracker:
         self.hand_rect_two_y = self.hand_rect_one_y + 10
 
         for i in range(self.total_rectangle):
-            cv2.rectangle(frame, (self.hand_rect_one_y[i], self.hand_rect_one_x[i]),
+            cv.rectangle(frame, (self.hand_rect_one_y[i], self.hand_rect_one_x[i]),
                         (self.hand_rect_two_y[i], self.hand_rect_two_x[i]),
                         (0, 255, 0), 1)
 
 
     def calculate_hand_histogram(self, frame):
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        hsv_frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
         roi = np.zeros([90, 10, 3], dtype=hsv_frame.dtype)
 
         for i in range(self.total_rectangle):
             roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.hand_rect_one_x[i]:self.hand_rect_one_x[i] + 10,
                                             self.hand_rect_one_y[i]:self.hand_rect_one_y[i] + 10]
 
-        self.hand_hist = cv2.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
-        self.hand_hist = cv2.normalize(self.hand_hist, self.hand_hist, 0, 255, cv2.NORM_MINMAX)
+        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
+        self.hand_hist = cv.normalize(self.hand_hist, self.hand_hist, 0, 255, cv.NORM_MINMAX)
         
         self.is_hand_hist_created = True
 
 
     def hist_masking(self, frame, hist):
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
-        dst = cv2.calcBackProject([hsv], [0, 1], hist, [0, 180, 0, 256], 1)
+        dst = cv.calcBackProject([hsv], [0, 1], hist, [0, 180, 0, 256], 1)
 
-        disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (31, 31))
-        cv2.filter2D(dst, -1, disc, dst)
+        disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (31, 31))
+        cv.filter2D(dst, -1, disc, dst)
 
-        ret, thresh = cv2.threshold(dst, 150, 255, cv2.THRESH_BINARY)
+        ret, thresh = cv.threshold(dst, 150, 255, cv.THRESH_BINARY)
         
-        thresh = cv2.erode(thresh, (3,3), iterations=4)
+        thresh = cv.erode(thresh, (3,3), iterations=4)
         
-        # thresh = cv2.dilate(thresh, None, iterations=5)
+        # thresh = cv.dilate(thresh, None, iterations=5)
 
-        thresh = cv2.merge((thresh, thresh, thresh))
+        thresh = cv.merge((thresh, thresh, thresh))
 
-        return cv2.bitwise_and(frame, thresh)
+        return cv.bitwise_and(frame, thresh)
 
 
     def __centroid(self, max_contour):
-        moment = cv2.moments(max_contour)
+        moment = cv.moments(max_contour)
         if moment['m00'] != 0:
             cx = int(moment['m10'] / moment['m00'])
             cy = int(moment['m01'] / moment['m00'])
@@ -97,12 +97,12 @@ class hand_tracker:
             x = np.array(points[:, 0], dtype=np.float)
             y = np.array(points[:, 1], dtype=np.float)
     
-            xp = cv2.pow(cv2.subtract(x, cx), 2)
-            yp = cv2.pow(cv2.subtract(y, cy), 2)
+            xp = cv.pow(cv.subtract(x, cx), 2)
+            yp = cv.pow(cv.subtract(y, cy), 2)
             
-            kk = cv2.add(xp, yp)
+            kk = cv.add(xp, yp)
             
-            dist = cv2.sqrt(kk)
+            dist = cv.sqrt(kk)
 
             dist_max_i = np.argmax(dist)
 
@@ -137,45 +137,45 @@ class hand_tracker:
         
     def draw_tips(self, frame, color):
         for tip in self.tips:
-            cv2.circle(frame, tip, 4, color, -1)
+            cv.circle(frame, tip, 4, color, -1)
         
-        #cv2.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv2.LINE_AA)
+        #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
 
     def draw_farthestpoint(self, frame, color):
-        cv2.circle(frame, self.cnt_centroid, 10, color, 2)
+        cv.circle(frame, self.cnt_centroid, 10, color, 2)
         
         if self.traverse_point is not None:
             for i in range(len(self.traverse_point)):
-                cv2.circle(frame, self.traverse_point[i], int(5 - (5 * i * 3) / 100), color, -1)
+                cv.circle(frame, self.traverse_point[i], int(5 - (5 * i * 3) / 100), color, -1)
 
     def draw_convex_hull(self,frame):
-        hull = [cv2.convexHull(self.max_cont)]
-        cv2.drawContours(frame,hull,-1,(255,255,255))
+        hull = [cv.convexHull(self.max_cont)]
+        cv.drawContours(frame,hull,-1,(255,255,255))
         
     def draw_contours(self,frame):
-        cv2.drawContours(frame,[self.max_cont],-1,(255,255,0), 3)
+        cv.drawContours(frame,[self.max_cont],-1,(255,255,0), 3)
 
     def process(self, frame):
         self.hist_mask_image = self.hist_masking(frame, self.hand_hist)
 
-        self.hist_mask_image = cv2.erode(self.hist_mask_image, None, iterations=2)
-        self.hist_mask_image = cv2.dilate(self.hist_mask_image, None, iterations=2)
+        self.hist_mask_image = cv.erode(self.hist_mask_image, None, iterations=2)
+        self.hist_mask_image = cv.dilate(self.hist_mask_image, None, iterations=2)
 
         self.contour_list = self.__contours(self.hist_mask_image)
         
         if len(self.contour_list) <= 0:
             return
         
-        self.max_cont = max(self.contour_list, key=cv2.contourArea)
+        self.max_cont = max(self.contour_list, key=cv.contourArea)
         
         self.cnt_centroid = self.__centroid(self.max_cont)
 
         if self.max_cont is not None:
-            hull = cv2.convexHull(self.max_cont, returnPoints=False)
-            defects = cv2.convexityDefects(self.max_cont, hull)
+            hull = cv.convexHull(self.max_cont, returnPoints=False)
+            defects = cv.convexityDefects(self.max_cont, hull)
             
-            contour_area = cv2.contourArea(self.max_cont)
-            hull_area = cv2.contourArea(cv2.convexHull(self.max_cont))
+            contour_area = cv.contourArea(self.max_cont)
+            hull_area = cv.contourArea(cv.convexHull(self.max_cont))
             
             if self.hull_area > 0:
                 self.hull_area = (self.hull_area + hull_area) / 2
@@ -187,8 +187,8 @@ class hand_tracker:
             else:
                 self.contour_area = contour_area
                 
-            cv2.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
-            cv2.putText(frame, "average : " + str(self.contour_area/self.hull_area), (0, 200), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
+            cv.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
+            cv.putText(frame, "average : " + str(self.contour_area/self.hull_area), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
             self.far_point = self.__farthest_point(defects, self.max_cont, self.cnt_centroid)
             self.tips, self.tip_cnt = self.__tips(defects, self.max_cont)
             
