@@ -5,6 +5,7 @@ class hand_tracker:
     def __init__(self, frame):
         self.total_rectangle = 9
         self.is_hand_hist_created = False
+        self.is_bg_frame_taken = False  
         
         self.far_points_history = []
         
@@ -14,6 +15,8 @@ class hand_tracker:
         self.hand_center = 0
         
         self.__rows, self.__cols, _ = frame.shape
+
+        self.bgFrame = {}
         
         self.hand_rect_one_x = np.array(
             [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 12 * self.__rows / 20,
@@ -53,6 +56,9 @@ class hand_tracker:
         height = int(frame.shape[0] * hpercent / 200)
         return cv.resize(frame, (width, height), interpolation=cv.INTER_AREA)
 
+    def saveBg_frame(self , frame):
+        self.bgFrame = frame
+
 
     def __get_contours(self, hist_mask_image):
         gray_hist_mask_image = cv.cvtColor(hist_mask_image, cv.COLOR_BGR2GRAY)
@@ -69,7 +75,7 @@ class hand_tracker:
             roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.hand_rect_one_x[i]:self.hand_rect_one_x[i] + 10,
                                             self.hand_rect_one_y[i]:self.hand_rect_one_y[i] + 10]
 
-        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
+        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 200, 0, 226])
         self.hand_hist = cv.normalize(self.hand_hist, self.hand_hist, 0, 255, cv.NORM_MINMAX)
         
         self.is_hand_hist_created = True

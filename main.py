@@ -75,6 +75,12 @@ def main():
         # Prepare calibration
         else:
             ht.draw_rect(camera_frame)
+
+        if keyboard.is_pressed("s"):
+            ht.saveBg_frame(camera_frame)
+
+        if keyboard.is_pressed("v"):
+            cv2.imshow("subtractor", cv2.subtract(camera_frame , ht.bgFrame ))
             
         if keyboard.is_pressed("f"):
             if start_center == 0:
