@@ -1,30 +1,26 @@
 import cv2 as cv
 
 class gesture_estimator:
-    
-    gestures = {
-        'fist': 0,
-        'fingers_spread': 1,
-        'thumb_up': 2,
-        'thumb_down': 3
-    }
 
-    
+
     def __init__(self):
-        None
+        self.threshold = 0.05
+        self.gestures = {
+            'zero':     0.83,
+            'one':      0.75,
+            'two':      0.60,
+            'three':    0.6,
+            'four':     0.55,
+            'five':     0.45
+        }
     
-    def estimate_from_tips(self, tips):
-        gesture = 'unknown'
-        if tips is not None:
-            if tips.shape[0] == 0:
-                gesture = 'fist'
-            elif tips.shape[0] == 1:
-                gesture = 'fingers_spread'
-            elif tips.shape[0] > 2:
-                gesture = 'thumb_up'
-            else:
-                gesture = 'thumb_down'
-        return gesture
+    def estimate_from_tips(self, value):
+        if abs(value - self.gestures['zero']):
+            return 'zero'
+        return 'unknown'
     
-    def estimate_from_area(area):
-        None
+    def estimate_from_area(self,area):
+        for key, value in self.gestures.items():
+            if abs(area - value) < self.threshold:
+                return key
+        return 'unknown'

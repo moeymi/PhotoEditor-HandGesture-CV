@@ -17,6 +17,9 @@ class hand_tracker:
         self.__rows, self.__cols, _ = frame.shape
 
         self.bgFrame = {}
+
+        self.estimate_values = []
+        self.fps = 30
         
         self.hand_rect_one_x = np.array(
             [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 12 * self.__rows / 20,
@@ -65,6 +68,17 @@ class hand_tracker:
         _, thresh = cv.threshold(gray_hist_mask_image, 0, 255, 0)
         cont, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         return cont
+
+    def __appendValueToAvgList(self , value):
+        self.estimate_values.append(value)
+        if len(self.estimate_values) > self.fps :
+            self.estimate_values.pop(0)
+            
+    def calculateAverageValue(self):
+        if len(self.estimate_values) < self.fps :
+            return self.estimate_values[len(self.estimate_values)-1]
+        avgValue = np.sum(self.estimate_values) / self.fps
+        return avgValue
 
 
     def calculate_hand_histogram(self, frame):
@@ -214,9 +228,10 @@ class hand_tracker:
                 self.contour_area = (self.contour_area + contour_area) / 2
             else:
                 self.contour_area = contour_area
-                
+
+            self.__appendValueToAvgList(contour_area/hull_area)
             cv.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
-            cv.putText(frame, "average : " + str(self.contour_area/self.hull_area), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
+            cv.putText(frame, "average : " + str(self.calculateAverageValue()), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
            
 
             self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)

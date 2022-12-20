@@ -88,7 +88,7 @@ def main():
         # Process frame
         elif ht.is_hand_hist_created:
             ht.process(camera_frame, interpolate = False)
-            
+            cv2.putText(camera_frame, "Gesture : " + ge.estimate_from_area(ht.calculateAverageValue()), (0, 250), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
             #ht.draw_farthestpoint(frame, [0, 255, 255])
             ht.draw_tips(camera_frame, [255, 0, 255])
             ht.draw_convex_hull(camera_frame)
