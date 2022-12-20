@@ -20,24 +20,36 @@ window_name = 'Photo Editor'
 camera_frame_width = 600 # Height is auto calculated based on aspect ratio
 camera_frame_x_offset=camera_frame_y_offset=20
 
+def init_window():
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    
+def render_window(camera_frame, img):
+    
+        asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
+        camera_frame_height = int(camera_frame_width * asp_ratio)
+        camera_frame = cv2.resize(camera_frame, (camera_frame_width, camera_frame_height))
+        
+        show_img = img.copy()
+        show_img[camera_frame_y_offset:camera_frame_y_offset+camera_frame.shape[0], camera_frame_x_offset:camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
+
+        cv2.imshow(window_name, show_img)
+        cv2.waitKey(1)
+
+        
 def main():
+    capture = cv2.VideoCapture(0)
+    if not capture.isOpened():
+        return
+    
     gui = App_GUI()
     
     dr = gui.load_file()
     
     org_img = cv2.imread(dr)
     
-    capture = cv2.VideoCapture(0)
-    if not capture.isOpened():
-        return
-    
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    
+    init_window()
     _, camera_frame = capture.read()
-    
-    asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
-    
     start_center = 0
     
     ge = gesture_estimator()
@@ -47,8 +59,7 @@ def main():
     
     editted_image = org_img
     while capture.isOpened():
-        
-        pressed_key = cv2.waitKey(1)
+        cv2.waitKey(1)
         _, camera_frame = capture.read()
         
         camera_frame = cv2.flip(camera_frame, 1)
@@ -87,25 +98,17 @@ def main():
                 start_center = ht.hand_center
             
             trans_vec = hh.calculate_translation_normalized(start_center, ht.hand_center, camera_frame.shape)
+            trans_vec = np.multiply(trans_vec,org_img.shape[0]).astype(int)
             editted_image = org_img
-            editted_image = pe.translate(editted_image, np.multiply(trans_vec,org_img.shape[0]).astype(int))
+            editted_image = pe.translate(editted_image, trans_vec)
         else:
             org_img = editted_image
             start_center = 0
-        
-        camera_frame_height = int(camera_frame_width * asp_ratio)
-        camera_frame = cv2.resize(camera_frame, (camera_frame_width, camera_frame_height))
-        
-        show_img = editted_image.copy()
-        
-        show_img[camera_frame_y_offset:camera_frame_y_offset+camera_frame.shape[0], camera_frame_x_offset:camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
         if keyboard.is_pressed("ESC"):
             break
         
-            
-        cv2.imshow(window_name, show_img)
-        pressed_key = cv2.waitKey(1) # force refreshing the window IT HAS TO BE THE LAST THING IN THE LOOP
+        render_window(camera_frame, editted_image)
 
     cv2.destroyAllWindows()
     capture.release()
