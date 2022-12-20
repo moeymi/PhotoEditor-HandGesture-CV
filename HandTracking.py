@@ -80,6 +80,19 @@ class hand_tracker:
         
         self.is_hand_hist_created = True
 
+    def subtractBackgroundFromFrame(self ,fg_frame , threshhold):
+        
+        h = fg_frame.shape[0]
+        w = fg_frame.shape[1]
+        
+        fg_frame_gray = cv.cvtColor(fg_frame, cv.COLOR_BGR2GRAY)
+        bg_frame_gray = cv.cvtColor(self.bgFrame, cv.COLOR_BGR2GRAY)
+
+        newFrame = fg_frame_gray - bg_frame_gray
+        ret,thresh = cv.threshold(newFrame,50,255,cv.THRESH_BINARY)
+        return thresh
+        
+
 
     def __get_hist_mask(self, frame, hist):
         hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)

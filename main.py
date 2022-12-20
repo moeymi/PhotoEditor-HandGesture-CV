@@ -80,7 +80,7 @@ def main():
             ht.saveBg_frame(camera_frame)
 
         if keyboard.is_pressed("v"):
-            cv2.imshow("subtractor", cv2.subtract(camera_frame , ht.bgFrame ))
+            cv2.imshow("subtractor", ht.subtractBackgroundFromFrame(camera_frame,150))
             
         if keyboard.is_pressed("f"):
             if start_center == 0:
@@ -109,7 +109,6 @@ def main():
 
     cv2.destroyAllWindows()
     capture.release()
-
 
 if __name__ == '__main__':
     main()
