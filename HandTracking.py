@@ -90,7 +90,10 @@ class hand_tracker:
 
         newFrame = fg_frame_gray - bg_frame_gray
         ret,thresh = cv.threshold(newFrame,50,255,cv.THRESH_BINARY)
-        return thresh
+        
+        thresh = cv.merge((thresh, thresh, thresh))
+        
+        return cv.bitwise_and(fg_frame, thresh)
         
 
 
