@@ -80,6 +80,7 @@ def main():
             ht.saveBg_frame(camera_frame)
 
         if keyboard.is_pressed("v"):
+            print(cv2.subtract(camera_frame , ht.bgFrame ))
             cv2.imshow("subtractor", cv2.subtract(camera_frame , ht.bgFrame ))
             
         if keyboard.is_pressed("f"):
@@ -97,7 +98,6 @@ def main():
         camera_frame = cv2.resize(camera_frame, (camera_frame_width, camera_frame_height))
         
         show_img = editted_image.copy()
-        
         show_img[camera_frame_y_offset:camera_frame_y_offset+camera_frame.shape[0], camera_frame_x_offset:camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
         if keyboard.is_pressed("ESC"):
