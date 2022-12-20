@@ -6,35 +6,49 @@ from skimage import transform as tf #to import this lib , pip install scikit-ima
 class photo_editor:
     
     def __init__(self):
-        self.img = None
+        self.no_drawing_image = None
+        self.current_image = None
+        self.cur_color = [255, 255, 255]
         
-    def translate(self, img, vec):
+    def translate(self, img, normalized_vec):
         rows,cols,_ = img.shape
-        M = np.float32([[1,0,vec[0]],[0,1,vec[1]]])
+        
+        trans_vec = np.multiply(normalized_vec,img[:, :, 0].shape).astype(int)
+        
+        M = np.float32([[1,0,trans_vec[0]],[0,1,trans_vec[1]]])
         dst = cv.warpAffine(img,M,(cols,rows))
-        return dst
+        
+        self.current_image = dst
+        self.no_drawing_image = dst
+        
+        return self.current_image
 
     def rotate(self,img,angle):
         (h,w) = img.shape[:2]
         center = (w/2,h/2)
         M = cv.getRotationMatrix2D(center=center,angle=angle,scale=1.0)
         rotated = cv.warpAffine(img, M, (w, h))
-        return rotated
+        
+        self.current_image = rotated
+        self.no_drawing_image = rotated
+        
+        return self.current_image
     
     def scale(self,img,scale_percentage):
-        width = int(img.shape[1] * scale_percentage / 100)
-        height = int(img.shape[0] * scale_percentage / 100)
+        width = int(img.shape[1] * scale_percentage / (img.shape[1] / 2))
+        height = int(img.shape[0] * scale_percentage / (img.shape[0] / 2))
         dim = (width, height)
         resized = cv.resize(img,dim)
-        return resized
+        
+        self.current_image = resized
+        self.no_drawing_image = resized
+        
+        return self.current_image
     
     def skew(self,img,shear):
         afine_tf = tf.AffineTransform(shear=shear)
         modified = tf.warp(image=img,inverse_map=afine_tf)
         return modified
-
-    
-
 
         
     

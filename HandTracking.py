@@ -16,10 +16,10 @@ class hand_tracker:
         
         self.__rows, self.__cols, _ = frame.shape
 
-        self.bgFrame = {}
-
         self.estimate_values = []
         self.fps = 30
+        
+        self.bgFrame = None
         
         self.hand_rect_one_x = np.array(
             [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 12 * self.__rows / 20,
@@ -53,6 +53,9 @@ class hand_tracker:
             cv.rectangle(frame, (self.hand_rect_one_y[i], self.hand_rect_one_x[i]),
                         (self.hand_rect_two_y[i], self.hand_rect_two_x[i]),
                         (0, 255, 0), 1)
+            
+    def show_save_bg(self, frame):
+        cv.putText(frame, "Press S to save background", (100, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
             
     def rescale_frame(self, frame, wpercent=130, hpercent=130):
         width = int(frame.shape[1] * wpercent / 200)
@@ -191,10 +194,11 @@ class hand_tracker:
         return None, None
         
     def draw_tips(self, frame, color):
-        for tip in self.tips:
-            cv.circle(frame, tip, 4, color, -1)
+        if self.tips is not None:
+            for tip in self.tips:
+                cv.circle(frame, tip, 4, color, -1)
         
-        #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
+            #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
 
     def process(self, frame, interpolate=True):
         self.hist_mask_image = self.subtractBackgroundFromFrame(frame , 150)
