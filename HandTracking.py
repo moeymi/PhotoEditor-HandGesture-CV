@@ -75,7 +75,7 @@ class hand_tracker:
             roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.hand_rect_one_x[i]:self.hand_rect_one_x[i] + 10,
                                             self.hand_rect_one_y[i]:self.hand_rect_one_y[i] + 10]
 
-        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 200, 0, 226])
+        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 226])
         self.hand_hist = cv.normalize(self.hand_hist, self.hand_hist, 0, 255, cv.NORM_MINMAX)
         
         self.is_hand_hist_created = True
@@ -183,7 +183,8 @@ class hand_tracker:
         #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
 
     def process(self, frame, interpolate=True):
-        self.hist_mask_image = self.__get_hist_mask(frame, self.hand_hist)
+        self.hist_mask_image = self.subtractBackgroundFromFrame(frame , 150)
+        self.hist_mask_image = self.__get_hist_mask(self.hist_mask_image, self.hand_hist)
 
         self.hist_mask_image = cv.erode(self.hist_mask_image, None, iterations=2)
         self.hist_mask_image = cv.dilate(self.hist_mask_image, None, iterations=2)
