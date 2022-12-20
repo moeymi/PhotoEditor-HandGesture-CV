@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import keyboard
+import regex as re
 
 from HandTracking import hand_tracker
 from GestureEstimator import gesture_estimator
@@ -36,26 +37,42 @@ def render_window(camera_frame, img):
         cv2.imshow(window_name, show_img)
         cv2.waitKey(1)
 
-        
+def get_cameras_indices():
+    index = 0
+    arr = []
+    while True:
+        cap = cv2.VideoCapture(index)
+        if not cap.read()[0]:
+            break
+        else:
+            arr.append(index)
+        cap.release()
+        index += 1
+    return arr
+
 def main():
-    capture = cv2.VideoCapture(0)
-    if not capture.isOpened():
-        return
     
     gui = App_GUI()
     
-    dr = gui.load_file()
+    dr, ind = gui.load(get_cameras_indices())
     
-    org_img = cv2.imread(dr)
+    ind = int(re.sub('\D', '', ind))
+    
+    capture = cv2.VideoCapture(ind)
+    
+    if not capture.isOpened() or dr == "":
+        return
     
     init_window()
+    org_img = cv2.imread(dr)
     _, camera_frame = capture.read()
-    start_center = 0
     
     ge = gesture_estimator()
     pe = photo_editor()
     ht = hand_tracker(camera_frame)
     hh = hand_helper()
+    
+    start_center = 0
     
     editted_image = org_img
     while capture.isOpened():
