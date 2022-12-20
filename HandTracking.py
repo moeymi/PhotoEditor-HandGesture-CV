@@ -105,8 +105,13 @@ class hand_tracker:
         fg_frame_gray = cv.cvtColor(fg_frame, cv.COLOR_BGR2GRAY)
         bg_frame_gray = cv.cvtColor(self.bgFrame, cv.COLOR_BGR2GRAY)
 
-        newFrame = fg_frame_gray - bg_frame_gray
-        ret,thresh = cv.threshold(newFrame,50,255,cv.THRESH_BINARY)
+        newFrame = np.square(fg_frame_gray - bg_frame_gray)
+        
+        _,thresh = cv.threshold(newFrame,50,255,cv.THRESH_BINARY)
+        
+        kernel = np.ones((10,10),np.uint8)
+        thresh=cv.morphologyEx(thresh,cv.MORPH_CLOSE,kernel)
+        thresh=cv.morphologyEx(thresh,cv.MORPH_OPEN,kernel)
         
         thresh = cv.merge((thresh, thresh, thresh))
         
