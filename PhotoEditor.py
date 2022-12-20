@@ -1,5 +1,7 @@
 import cv2 as cv
 import numpy as np
+from skimage import io
+from skimage import transform as tf #to import this lib , pip install scikit-image
 
 class photo_editor:
     
@@ -25,6 +27,13 @@ class photo_editor:
         dim = (width, height)
         resized = cv.resize(img,dim)
         return resized
+    
+    def skew(self,img,shear):
+        afine_tf = tf.AffineTransform(shear=shear)
+        modified = tf.warp(image=img,inverse_map=afine_tf)
+        return modified
+
+    
 
 
         
