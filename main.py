@@ -108,9 +108,13 @@ class Runner:
             self.editted_image = self.pe.erase(self.editted_image, self.no_drawing_image, self.cursor_pos)
 
         elif self.ge.predicted_gesture == 1:
-            scale_x = self.ht.hand_center[1] / (camera_frame.shape[0] / 2) * 100
-            scale_y = self.ht.hand_center[0] / (camera_frame.shape[1] / 2) * 100
-            self.editted_image = self.pe.scale(self.editted_image,scale_x,scale_y)
+            
+            if self.start_center == 0:
+                self.start_center = self.ht.hand_center
+            
+            self.scale_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.scale_vec = [1 + w for w in self.scale_vec]
+            self.editted_image = self.pe.scale(self.editted_image,self.scale_vec[0],self.scale_vec[1])
 
         elif self.ge.predicted_gesture == 8:
             myradians = math.atan2(self.ht.hand_center[0]-(camera_frame.shape[1] / 2), 
