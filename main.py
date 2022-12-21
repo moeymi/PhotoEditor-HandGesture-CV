@@ -28,6 +28,7 @@ class Runner:
         self.window_name = 'Photo Editor'
         
         self.trans_vec = None
+        self.scale_vec = None
 
         self.camera_frame_width = 420 # Height is auto calculated based on aspect ratio
         self.camera_frame_x_offset = self.camera_frame_y_offset = 20
@@ -89,7 +90,11 @@ class Runner:
             if self.trans_vec is not None:
                 self.no_drawing_image = self.pe.translate(self.no_drawing_image, self.trans_vec)
                 
+            if self.scale_vec is not None:
+                self.no_drawing_image = self.pe.scale(self.no_drawing_image,self.scale_vec[0],self.scale_vec[1])
+                
             self.trans_vec = None
+            self.scale_vec = None
             return   
         self.editted_image = self.org_img
         
