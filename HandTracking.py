@@ -146,7 +146,7 @@ class hand_tracker:
             s = defects[:, 0][:, 0]
             cx, cy = centroid
             
-            points = np.array([contour[point] for point in s if contour[point][0][1] <= cy])
+            points = np.array([contour[point] for point in s])
             points = points[:, 0, :]
             
             x = np.array(points[:, 0], dtype=np.float)
@@ -234,15 +234,13 @@ class hand_tracker:
             cv.putText(frame, "average : " + str(self.area_average_percentage), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
            
 
-            #self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)
+            self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)
             self.tips, self.tip_cnt = self.__get_tips(defects, self.hand_contour)
             
-            """
-            if len(self.far_points_history) < 10:
+            if len(self.far_points_history) < 2:
                 self.far_points_history.append(self.far_point)
             else:
                 self.far_points_history.pop(0)
                 self.far_points_history.append(self.far_point)
-                """
             
             return True

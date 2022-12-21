@@ -25,58 +25,43 @@ class gesture_estimator:
         self.frame_counter = 0
         
         self.predicted_gesture = 0
-
-        self.is_clicked = False 
         
         self.timer  = timeit.default_timer()
     
-    def estimate_from_tips(self, tips):
-        if abs(tips - self.gestures['zero']):
-            return 'zero'
-        return 'unknown'
-    
-    def estimate_from_area(self, area):
-        for key, value in self.gestures.items():
-            if abs(area - value) < self.threshold:
-                return key
-        return 'unknown'
-    
-    def estimate(self, area, defect_count):
+    def estimate(self, area, defect_count, farthest_point, center_point):
         self.frame_counter += 1
         
-        gesture = 0
+        gesture = 'zero'
         
         if area >= self.gestures['zero']:
-            gesture = 0
+            gesture = 'zero'
         
         elif defect_count == 0:
-            gesture = 1
+            if farthest_point[1] < center_point[1]:
+                gesture = 'save'
+            else:
+                gesture = 'translate'
         
         elif defect_count == 1:
             if area >= self.gestures['two']:
-                gesture = 2
+                gesture = 'two'
             else:
-                gesture = 6
+                gesture = 'six'
         
         elif defect_count == 2:
-            gesture =  3
+            gesture =  'three'
         
         elif defect_count == 3:
-            gesture =  4
+            gesture =  'four'
         
         elif defect_count == 4:
-            gesture =  5
+            gesture =  'five'
             
         self.__previous_gestures.append(gesture)
         
         if timeit.default_timer() - self.timer >= 2.5:
             self.timer = timeit.default_timer() 
-            max_index = np.bincount(np.array(self.__previous_gestures)).argmax()
-            if max_index ==0 :
-                self.is_clicked = True
-            else: 
-                self.predicted_gesture = np.bincount(np.array(self.__previous_gestures)).argmax()
-                self.is_clicked = False
+            self.predicted_gesture = max(set(self.__previous_gestures), key=self.__previous_gestures.count)
             self.__previous_gestures = [gesture]
             
         return gesture

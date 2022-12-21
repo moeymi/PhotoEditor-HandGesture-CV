@@ -169,8 +169,7 @@ class Runner:
         self.ht.draw_contours(camera_frame)
         
         cv2.putText(camera_frame, str(self.ge.predicted_gesture) ,(30, 100), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
-        cv2.putText(camera_frame, "IS CLICKED = " + str(self.ge.is_clicked) ,(10, 130), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv2.LINE_AA)
-        #self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
+        self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
         
     def process_tuning_input(self):
         if keyboard.is_pressed("1"):
