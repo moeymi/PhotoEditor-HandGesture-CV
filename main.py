@@ -80,6 +80,14 @@ class Runner:
             trans_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
             self.editted_image = self.org_img
             self.editted_image = self.pe.translate(self.editted_image, trans_vec)
+            
+        elif keyboard.is_pressed("g"):
+            self.editted_image = self.org_img
+            self.editted_image = self.pe.draw(self.editted_image, (int(self.editted_image.shape[1] / 2), int(self.editted_image.shape[0] / 2)))
+            
+        elif keyboard.is_pressed("h"):
+            self.editted_image = self.org_img
+            self.editted_image = self.pe.erase(self.editted_image, (int(self.editted_image.shape[1] / 2), int(self.editted_image.shape[0] / 2)))
         else:
             self.org_img = self.editted_image
             self.start_center = 0
@@ -148,6 +156,7 @@ class Runner:
         # Process frame
         elif self.ht.is_hand_hist_created and self.ht.bgFrame is not None:
             self.process_tuning_input()
+            
             if self.ht.process(camera_frame, self.kernel, self.threshold, self.iters):
                 self.draw_gizmos(camera_frame)
                 self.process_editting_input(camera_frame)

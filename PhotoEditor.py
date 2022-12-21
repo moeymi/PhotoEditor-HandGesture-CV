@@ -9,6 +9,8 @@ class photo_editor:
         self.no_drawing_image = None
         self.current_image = None
         self.cur_color = [255, 255, 255]
+        self.brush_size = 10
+        self.brush_color = (255, 0, 255)
         
     def translate(self, img, normalized_vec):
         rows,cols,_ = img.shape
@@ -49,6 +51,27 @@ class photo_editor:
         afine_tf = tf.AffineTransform(shear=shear)
         modified = tf.warp(image=img,inverse_map=afine_tf)
         return modified
-
+    
+    def draw(self, img, point):
+        self.current_image = img
         
+        if self.no_drawing_image is None:
+            self.no_drawing_image = img.copy()
+            
+        cv.circle(self.current_image, point, self.brush_size, self.brush_color, -1)
+        return self.current_image
+    
+    def erase(self, img, point):
+        self.current_image = img
+        
+        point = tuple(x - self.brush_size for x in point)
+        
+        if self.no_drawing_image is None:
+            self.no_drawing_image = img.copy()
+        
+        crop_original = self.no_drawing_image[point[1]:(point[1] + 2 * self.brush_size), point[0]:(point[0]+ 2 * self.brush_size)]
+        
+        self.current_image[point[1]:(point[1] + 2 * self.brush_size), point[0]:(point[0]+ 2 * self.brush_size)] = crop_original
+        
+        return self.current_image
     
