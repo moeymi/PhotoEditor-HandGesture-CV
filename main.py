@@ -59,7 +59,7 @@ class Runner:
 
             self.cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
                 int((self.ht.hand_center[1]  / camera_frame.shape[0])* self.editted_image.shape[0]))  
-            cv2.circle(show_img, self.cursor_pos, 10, self.pe.brush_color, thickness=2, lineType=8, shift=0)
+            cv2.circle(show_img, self.cursor_pos, self.pe.brush_size , self.pe.brush_color, thickness=2, lineType=8, shift=0)
                         
             asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
             camera_frame_height = int(self.camera_frame_width * asp_ratio)
@@ -128,6 +128,15 @@ class Runner:
             
             self.rotate_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
             self.editted_image = self.pe.rotate(self.editted_image,math.radians(self.rotate_vec[0] * 360))
+
+        elif self.ge.predicted_gesture == 6:
+            
+            if self.start_center == 0:
+                self.start_center = self.ht.hand_center
+            
+            self.scale_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.scale_vec = [1 + w for w in self.scale_vec]
+            self.pe.scale_brush(self.scale_vec[0])
             
     def load_config(self):
         image_dir, camera_ind = self.gui.load(self.get_cameras_indices())

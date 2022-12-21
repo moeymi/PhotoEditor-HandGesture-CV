@@ -68,3 +68,6 @@ class photo_editor:
         
         return self.current_image
     
+    def scale_brush (self , scale) :
+        self.brush_size *= scale
+    
