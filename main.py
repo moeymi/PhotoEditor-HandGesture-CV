@@ -28,8 +28,10 @@ class Runner:
         
         self.trans_vec = None
 
-        self.camera_frame_width = 320 # Height is auto calculated based on aspect ratio
+        self.camera_frame_width = 420 # Height is auto calculated based on aspect ratio
         self.camera_frame_x_offset = self.camera_frame_y_offset = 20
+        
+        self.editting_window_width = 1300
 
         self.ge = self.pe = self.ht = self.hh = None
 
@@ -119,8 +121,8 @@ class Runner:
         
         img = cv2.imread(image_dir)
         asp_ratio = img.shape[0] / img.shape[1]
-        height = int(1280 * asp_ratio)
-        self.org_img = cv2.resize(img, (1280, height))
+        height = int(self.editting_window_width * asp_ratio)
+        self.org_img = cv2.resize(img, (self.editting_window_width , height))
         
         self.editted_image = self.org_img
         self.no_drawing_image = self.org_img.copy()

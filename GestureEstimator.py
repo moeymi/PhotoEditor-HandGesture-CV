@@ -14,7 +14,7 @@ class gesture_estimator:
         self.gestures = {
             'zero':     0.85,
             'one':      0.75,
-            'two':      0.60,
+            'two':      0.68,
             'three':    0.6,
             'four':     0.55,
             'five':     0.45
@@ -53,7 +53,10 @@ class gesture_estimator:
             gesture = 1
         
         elif defect_count == 1:
-            gesture = 2
+            if area >= self.gestures['two']:
+                gesture = 2
+            else:
+                gesture = 6
         
         elif defect_count == 2:
             gesture =  3
