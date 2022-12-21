@@ -37,7 +37,6 @@ class Runner:
         self.cursor_pos = (0,0)
         
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         
         self.gui = App_GUI()
         self.ge = gesture_estimator()
@@ -50,7 +49,7 @@ class Runner:
                 
             
             show_img = self.editted_image.copy()
-            show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
+            #show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
 
             self.cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
@@ -62,6 +61,8 @@ class Runner:
             camera_frame = cv2.resize(camera_frame, (self.camera_frame_width, camera_frame_height))
 
             cv2.imshow(self.window_name, show_img)
+            
+            cv2.imshow("Camera", camera_frame)
             cv2.waitKey(1)
 
     def get_cameras_indices(self):
