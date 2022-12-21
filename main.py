@@ -170,6 +170,16 @@ class Runner:
             self.brush_size = [1 + w for w in self.brush_size]
             self.pe.scale_brush(self.brush_size[0])
             
+        
+        elif self.ge.predicted_gesture == 'skew':
+            
+            if self.start_center == 0:
+                self.start_center = self.ht.hand_center
+            
+            self.shear_amount = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.shear_amount = [1 + w for w in self.brush_size]
+            #self.pe.skew(self.brush_size[0])
+            
         elif self.ge.predicted_gesture == 'color_pick':
             
             self.render_colorpick_window(camera_frame)
