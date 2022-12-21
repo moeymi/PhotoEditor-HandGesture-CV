@@ -94,12 +94,16 @@ class Runner:
             if self.scale_vec is not None:
                 self.no_drawing_image = self.pe.scale(self.no_drawing_image,self.scale_vec[0],self.scale_vec[1])
                 
+            if self.rotate_vec is not None:
+                self.no_drawing_image = self.pe.rotate(self.no_drawing_image,math.radians(self.rotate_vec[0] * 360))
+            
             self.trans_vec = None
             self.scale_vec = None
+            self.rotate_vec = None
             return   
         self.editted_image = self.org_img
         
-        if self.ge.predicted_gesture == 1:
+        if self.ge.predicted_gesture == 'translate':
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -107,13 +111,13 @@ class Runner:
             self.trans_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
             self.editted_image = self.pe.translate(self.editted_image, self.trans_vec)
             
-        elif self.ge.predicted_gesture == 2:
+        elif self.ge.predicted_gesture == 'draw':
             self.editted_image = self.pe.draw(self.editted_image, self.cursor_pos)
             
-        elif self.ge.predicted_gesture == 3:
+        elif self.ge.predicted_gesture == 'erase':
             self.editted_image = self.pe.erase(self.editted_image, self.no_drawing_image, self.cursor_pos)
 
-        elif self.ge.predicted_gesture == 4:
+        elif self.ge.predicted_gesture == 'scale':
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -122,7 +126,7 @@ class Runner:
             self.scale_vec = [1 + w for w in self.scale_vec]
             self.editted_image = self.pe.scale(self.editted_image,self.scale_vec[0],self.scale_vec[1])
 
-        elif self.ge.predicted_gesture == 5:
+        elif self.ge.predicted_gesture == 'rotate':
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
             
@@ -139,19 +143,19 @@ class Runner:
             self.pe.scale_brush(self.scale_vec[0])
             
     def load_config(self):
-        image_dir, camera_ind = self.gui.load(self.get_cameras_indices())
+        self.image_dir, camera_ind = self.gui.load(self.get_cameras_indices())
         camera_ind = int(re.sub('\D', '', camera_ind))
         
         self.capture = cv2.VideoCapture(camera_ind)
         
-        if not self.capture.isOpened() or image_dir == "":
+        if not self.capture.isOpened() or self.image_dir == "":
             return False
         
         _, frame = self.capture.read()
         
         self.ht = hand_tracker(frame)
         
-        img = cv2.imread(image_dir)
+        img = cv2.imread(self.image_dir)
         asp_ratio = img.shape[0] / img.shape[1]
         height = int(self.editting_window_width * asp_ratio)
         self.org_img = cv2.resize(img, (self.editting_window_width , height))
