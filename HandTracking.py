@@ -201,8 +201,8 @@ class hand_tracker:
         
         self._last_frame_counter +=1
         
-        self.hist_mask_image = self.subtractBackgroundFromFrame(frame, kernel=kernel, threshold=threshold, iters = iters)
-        self.hist_mask_image = self.__get_hist_mask(self.hist_mask_image, self.hand_hist)
+        self.substraction_mask = self.subtractBackgroundFromFrame(frame, kernel=kernel, threshold=threshold, iters = iters)
+        self.hist_mask_image = self.__get_hist_mask(self.substraction_mask, self.hand_hist)
 
         self.hist_mask_image = cv.erode(self.hist_mask_image, None, iterations=2)
         self.hist_mask_image = cv.dilate(self.hist_mask_image, None, iterations=2)

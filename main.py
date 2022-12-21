@@ -42,11 +42,16 @@ class Runner:
         self.hh = hand_helper()
 
     def render_window(self, camera_frame):
+            if keyboard.is_pressed("v"):
+                camera_frame = self.ht.substraction_mask
+                
             asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
             camera_frame_height = int(self.camera_frame_width * asp_ratio)
             camera_frame = cv2.resize(camera_frame, (self.camera_frame_width, camera_frame_height))
             
             show_img = self.editted_image.copy()
+            
+                
             show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
             cv2.imshow(self.window_name, show_img)
@@ -97,8 +102,6 @@ class Runner:
             
     def draw_gizmos(self, camera_frame):
         #ht.draw_farthestpoint(frame, [0, 255, 255])
-        if keyboard.is_pressed("v"):
-            cv2.imshow("subtractor", self.ht.subtractBackgroundFromFrame(camera_frame, kernel=self.kernel, threshold=self.threshold, iters = self.iters))
         
         self.ht.draw_tips(camera_frame, [255, 0, 255])
         self.ht.draw_convex_hull(camera_frame)
