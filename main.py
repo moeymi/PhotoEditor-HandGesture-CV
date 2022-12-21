@@ -216,7 +216,7 @@ class Runner:
             if self.ht.process(camera_frame, self.kernel, self.threshold, self.iters):
                 self.draw_gizmos(camera_frame)
                 self.process_editting_input(camera_frame)
-                self.ge.estimate(self.ht.area_average_percentage, len(self.ht.tips))
+                self.ge.estimate(self.ht.area_average_percentage, len(self.ht.tips), self.ht.far_point, self.ht.hand_center)
             
         # Prepare calibration
         else:

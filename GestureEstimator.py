@@ -37,25 +37,25 @@ class gesture_estimator:
             gesture = 'zero'
         
         elif defect_count == 0:
-            if farthest_point[1] < center_point[1]:
+            if farthest_point[1] >= center_point[1]:
                 gesture = 'save'
             else:
                 gesture = 'translate'
         
         elif defect_count == 1:
             if area >= self.gestures['two']:
-                gesture = 'two'
+                gesture = 'rotate'
             else:
                 gesture = 'six'
         
         elif defect_count == 2:
-            gesture =  'three'
+            gesture =  'scale'
         
         elif defect_count == 3:
-            gesture =  'four'
+            gesture =  'draw'
         
         elif defect_count == 4:
-            gesture =  'five'
+            gesture =  'erase'
             
         self.__previous_gestures.append(gesture)
         
