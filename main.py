@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import keyboard
 import regex as re
+import math
 
 from HandTracking import hand_tracker
 from GestureEstimator import gesture_estimator
@@ -92,7 +93,7 @@ class Runner:
             return   
         self.editted_image = self.org_img
         
-        if self.ge.predicted_gesture == 1:
+        if self.ge.predicted_gesture == 5:
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -105,6 +106,16 @@ class Runner:
             
         elif self.ge.predicted_gesture == 3:
             self.editted_image = self.pe.erase(self.editted_image, self.no_drawing_image, self.cursor_pos)
+
+        elif self.ge.predicted_gesture == 1:
+            scale_x = self.ht.hand_center[1] / (camera_frame.shape[0] / 2) * 100
+            scale_y = self.ht.hand_center[0] / (camera_frame.shape[1] / 2) * 100
+            self.editted_image = self.pe.scale(self.editted_image,scale_x,scale_y)
+
+        elif self.ge.predicted_gesture == 8:
+            myradians = math.atan2(self.ht.hand_center[0]-(camera_frame.shape[1] / 2), 
+                                    self.ht.hand_center[1] - (camera_frame.shape[0] / 2))
+            self.editted_image = self.pe.rotate(self.editted_image,myradians)
             
     def load_config(self):
         image_dir, camera_ind = self.gui.load(self.get_cameras_indices())

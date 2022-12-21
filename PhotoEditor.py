@@ -36,12 +36,13 @@ class photo_editor:
         
         return self.current_image
     
-    def scale(self,img,scale_percentage):
-        width = int(img.shape[1] * scale_percentage / (img.shape[1] / 2))
-        height = int(img.shape[0] * scale_percentage / (img.shape[0] / 2))
+    def scale(self,img,scale_percentage_x ,scale_percentage_y ):
+        print(scale_percentage_x , scale_percentage_y)
+        width = int(img.shape[1] * scale_percentage_x / (img.shape[1] / 2))
+        height = int(img.shape[0] * scale_percentage_y / (img.shape[0] / 2))
         dim = (width, height)
-        resized = cv.resize(img,dim)
-        
+        resized = cv.resize(img,dim,interpolation = cv.INTER_AREA)
+        cv.imshow("resize" ,  resized)
         self.current_image = resized
         
         return self.current_image
