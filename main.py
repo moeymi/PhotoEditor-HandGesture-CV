@@ -36,7 +36,7 @@ class Runner:
         self.start_center = 0
         self.cursor_pos = (0,0)
         
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+        #cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
         
         self.gui = App_GUI()
         self.ge = gesture_estimator()
@@ -116,7 +116,12 @@ class Runner:
         _, frame = self.capture.read()
         
         self.ht = hand_tracker(frame)
-        self.org_img = cv2.imread(image_dir)
+        
+        img = cv2.imread(image_dir)
+        asp_ratio = img.shape[0] / img.shape[1]
+        height = int(1280 * asp_ratio)
+        self.org_img = cv2.resize(img, (1280, height))
+        
         self.editted_image = self.org_img
         self.no_drawing_image = self.org_img.copy()
         
