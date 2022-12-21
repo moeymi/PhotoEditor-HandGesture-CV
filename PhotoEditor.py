@@ -68,7 +68,10 @@ class photo_editor:
         return self.current_image
     
     def scale_brush (self , scale) :
-        self.brush_size *= scale
+        self.brush_size = int(self.brush_size * scale )
+        print(self.brush_size)
+        if self.brush_size < 5 :
+            self.brush_size = 5 
 
     def change_bruch_color(self , newColor) :
         self.brush_color = newColor
