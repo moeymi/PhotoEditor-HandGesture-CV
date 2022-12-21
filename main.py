@@ -106,6 +106,8 @@ class Runner:
         self.ht.draw_tips(camera_frame, [255, 0, 255])
         self.ht.draw_convex_hull(camera_frame)
         self.ht.draw_contours(camera_frame)
+        
+        cv2.putText(camera_frame, str(self.ge.predicted_gesture) ,(30, 100), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
         #self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
         
     def process_tuning_input(self):
@@ -139,11 +141,9 @@ class Runner:
         _, camera_frame = self.capture.read()
         camera_frame = cv2.flip(camera_frame, 1)
         
-        
         # Reset
         if keyboard.is_pressed("r"):
             self.ht = hand_tracker(camera_frame)
-        
             
         # Process frame
         elif self.ht.is_hand_hist_created and self.ht.bgFrame is not None:
@@ -151,6 +151,7 @@ class Runner:
             if self.ht.process(camera_frame, self.kernel, self.threshold, self.iters):
                 self.draw_gizmos(camera_frame)
                 self.process_editting_input(camera_frame)
+                self.ge.estimate(self.ht.area_average_percentage, len(self.ht.tips))
             
         # Prepare calibration
         else:

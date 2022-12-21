@@ -1,4 +1,12 @@
 import cv2 as cv
+import numpy as np
+import timeit
+
+
+
+#Your statements here
+
+stop = timeit.default_timer()
 
 class gesture_estimator:
     def __init__(self):
@@ -11,6 +19,14 @@ class gesture_estimator:
             'four':     0.55,
             'five':     0.45
         }
+        
+        self.__previous_gestures = []
+        
+        self.frame_counter = 0
+        
+        self.predicted_gesture = 'zero'
+        
+        self.timer  = timeit.default_timer()
     
     def estimate_from_tips(self, tips):
         if abs(tips - self.gestures['zero']):
@@ -23,22 +39,34 @@ class gesture_estimator:
                 return key
         return 'unknown'
     
-    def estimate_from_both(self, area, tips_cnt):
+    def estimate(self, area, defect_count):
+        self.frame_counter += 1
+        
+        gesture = 0
+        
         if area >= self.gestures['zero']:
-            return 'zero'
+            gesture = 0
         
-        elif tips_cnt == 0:
-            return 'one'
+        elif defect_count == 0:
+            gesture = 1
         
-        elif tips_cnt == 1:
-            return 'two'
+        elif defect_count == 1:
+            gesture = 2
         
-        elif tips_cnt == 2:
-            return 'three'
+        elif defect_count == 2:
+            gesture =  3
         
-        elif tips_cnt == 3:
-            return 'four'
+        elif defect_count == 3:
+            gesture =  4
         
-        elif tips_cnt == 4:
-            return 'five'
+        elif defect_count == 4:
+            gesture =  5
             
+        self.__previous_gestures.append(gesture)
+        
+        if timeit.default_timer() - self.timer >= 2.5:
+            self.timer = timeit.default_timer() 
+            self.predicted_gesture = np.bincount(np.array(self.__previous_gestures)).argmax()
+            self.__previous_gestures = [gesture]
+            
+        return gesture
