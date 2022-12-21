@@ -29,6 +29,7 @@ class Runner:
         
         self.trans_vec = None
         self.scale_vec = None
+        self.rotate_vec = None
 
         self.camera_frame_width = 420 # Height is auto calculated based on aspect ratio
         self.camera_frame_x_offset = self.camera_frame_y_offset = 20
@@ -98,7 +99,7 @@ class Runner:
             return   
         self.editted_image = self.org_img
         
-        if self.ge.predicted_gesture == 5:
+        if self.ge.predicted_gesture == 1:
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -112,7 +113,7 @@ class Runner:
         elif self.ge.predicted_gesture == 3:
             self.editted_image = self.pe.erase(self.editted_image, self.no_drawing_image, self.cursor_pos)
 
-        elif self.ge.predicted_gesture == 1:
+        elif self.ge.predicted_gesture == 4:
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -121,10 +122,12 @@ class Runner:
             self.scale_vec = [1 + w for w in self.scale_vec]
             self.editted_image = self.pe.scale(self.editted_image,self.scale_vec[0],self.scale_vec[1])
 
-        elif self.ge.predicted_gesture == 8:
-            myradians = math.atan2(self.ht.hand_center[0]-(camera_frame.shape[1] / 2), 
-                                    self.ht.hand_center[1] - (camera_frame.shape[0] / 2))
-            self.editted_image = self.pe.rotate(self.editted_image,myradians)
+        elif self.ge.predicted_gesture == 5:
+            if self.start_center == 0:
+                self.start_center = self.ht.hand_center
+            
+            self.rotate_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.editted_image = self.pe.rotate(self.editted_image,math.radians(self.rotate_vec[0] * 360))
             
     def load_config(self):
         image_dir, camera_ind = self.gui.load(self.get_cameras_indices())
