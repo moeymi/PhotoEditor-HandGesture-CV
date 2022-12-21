@@ -9,7 +9,7 @@ class hand_tracker:
         
         self.far_points_history = []
         
-        self.hand_center = 0
+        self.hand_center = (0,0)
         
         self.__rows, self.__cols, _ = frame.shape
 

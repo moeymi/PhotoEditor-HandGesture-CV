@@ -54,6 +54,10 @@ class Runner:
                 
             show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
+            cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
+                int((self.ht.hand_center[1]  / camera_frame.shape[0])* self.editted_image.shape[0]))  
+            cv2.circle(show_img, cursor_pos, 10, self.pe.brush_color, thickness=2, lineType=8, shift=0)
+
             cv2.imshow(self.window_name, show_img)
             cv2.waitKey(1)
 
