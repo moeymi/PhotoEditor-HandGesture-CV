@@ -37,11 +37,11 @@ class gesture_estimator:
             gesture = 'zero'
         
         elif defect_count == 0:
-            if center_point[1] - farthest_point[1] >= 40:
+            if center_point[1] - farthest_point[1] >= 60:
                 gesture = 'translate'
-            elif farthest_point[0] - center_point[0] >= 40:
+            elif farthest_point[0] - center_point[0] >= 60:
                 gesture = 'brush_size'
-            elif center_point[0] - farthest_point[0] >= 40:
+            elif center_point[0] - farthest_point[0] >= 60:
                 gesture = 'color_pick'
             else:
                 gesture = 'save'
@@ -63,9 +63,11 @@ class gesture_estimator:
             
         self.__previous_gestures.append(gesture)
         
-        if timeit.default_timer() - self.timer >= 1.75:
+        if timeit.default_timer() - self.timer >= 2.5:
             self.timer = timeit.default_timer() 
-            self.predicted_gesture = max(set(self.__previous_gestures), key=self.__previous_gestures.count)
+            pr = max(set(self.__previous_gestures), key=self.__previous_gestures.count)
+            if pr != 'zero':
+                self.predicted_gesture = pr
             self.__previous_gestures = [gesture]
             
         return gesture

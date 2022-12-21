@@ -31,6 +31,8 @@ class Runner:
         self.trans_vec = None
         self.scale_vec = None
         self.rotate_vec = None
+        
+        self.was_picking_color = False
 
         self.camera_frame_width = 420 # Height is auto calculated based on aspect ratio
         self.camera_frame_x_offset = self.camera_frame_y_offset = 20
@@ -48,6 +50,25 @@ class Runner:
         self.ge = gesture_estimator()
         self.pe = photo_editor()
         self.hh = hand_helper()
+        
+    def render_colorpick_window(self, camera_frame):
+        cpy = self.color_picker_img.copy()
+        cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * cpy.shape[1]), 
+            int((self.ht.hand_center[1]  / camera_frame.shape[0])* cpy.shape[0]))
+        
+        cv2.circle(cpy, cursor_pos, 4 , self.pe.brush_color, thickness=2, lineType=8)
+        cv2.imshow("Color picker", cpy)
+        
+    def pick_color(self, camera_frame):
+        cpy = self.color_picker_img.copy()
+        cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * cpy.shape[1]), 
+            int((self.ht.hand_center[1]  / camera_frame.shape[0])* cpy.shape[0]))
+        
+        color = self.color_picker_img[cursor_pos[1], cursor_pos[0]]
+        
+        self.pe.brush_color = (int(color[0]), int(color[1]), int(color[2]))
+    
+        cv2.destroyWindow("Color picker")
 
     def render_window(self, camera_frame):
             if keyboard.is_pressed("v"):
@@ -86,6 +107,8 @@ class Runner:
 
     def process_editting_input(self, camera_frame):
         if not keyboard.is_pressed('f'):
+            
+            
             self.org_img = self.editted_image
             self.start_center = 0
             
@@ -98,9 +121,13 @@ class Runner:
             if self.rotate_vec is not None:
                 self.no_drawing_image = self.pe.rotate(self.no_drawing_image,math.radians(self.rotate_vec[0] * 360))
             
+            if self.was_picking_color:
+                self.pick_color(camera_frame)
+            
             self.trans_vec = None
             self.scale_vec = None
             self.rotate_vec = None
+            self.was_picking_color = None
             return   
         self.editted_image = self.org_img
         
@@ -132,16 +159,22 @@ class Runner:
                 self.start_center = self.ht.hand_center
             
             self.rotate_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
-            self.editted_image = self.pe.rotate(self.editted_image,math.radians(self.rotate_vec[0] * 360))
+            self.editted_image = self.pe.rotate(self.editted_image,self.rotate_vec[0] * 360)
 
         elif self.ge.predicted_gesture == 'brush_size':
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
             
-            self.scale_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
-            self.scale_vec = [1 + w for w in self.scale_vec]
-            self.pe.scale_brush(self.scale_vec[0])
+            self.brush_size = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.brush_size = [1 + w for w in self.brush_size]
+            self.pe.scale_brush(self.brush_size[0])
+            
+        elif self.ge.predicted_gesture == 'color_pick':
+            
+            self.render_colorpick_window(camera_frame)
+            
+            self.was_picking_color = True
 
         elif self.ge.predicted_gesture == 'save':
             self.__save_editted_image()
@@ -159,6 +192,8 @@ class Runner:
         
         self.ht = hand_tracker(frame)
         
+        self.color_picker_img = cv2.imread('E:/Uni/Computer Vision/PhotoEditor/assets/color_picker.jpg')
+
         img = cv2.imread(self.image_dir)
         asp_ratio = img.shape[0] / img.shape[1]
         height = int(self.editting_window_width * asp_ratio)

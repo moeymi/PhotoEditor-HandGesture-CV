@@ -8,7 +8,6 @@ class photo_editor:
     def __init__(self):
         self.no_drawing_image = None
         self.current_image = None
-        self.cur_color = [255, 255, 255]
         self.brush_size = 10
         self.brush_color = (255, 0, 255)
         
