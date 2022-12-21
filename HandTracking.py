@@ -9,15 +9,15 @@ class hand_tracker:
         
         self.far_points_history = []
         
-        self.contour_area = 0
-        self.hull_area = 0
-        
         self.hand_center = 0
         
         self.__rows, self.__cols, _ = frame.shape
 
-        self.estimate_values = []
-        self.fps = 30
+        self.area_percentages = []
+        self.averaging_fps_threshold = 5
+        self.area_average_percentage = 0
+        
+        self._last_frame_counter = 0
         
         self.bgFrame = None
         
@@ -71,18 +71,14 @@ class hand_tracker:
         _, thresh = cv.threshold(gray_hist_mask_image, 0, 255, 0)
         cont, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         return cont
-
-    def __appendValueToAvgList(self , value):
-        self.estimate_values.append(value)
-        if len(self.estimate_values) > self.fps :
-            self.estimate_values.pop(0)
             
-    def calculateAverageValue(self):
-        if len(self.estimate_values) < self.fps :
-            return self.estimate_values[len(self.estimate_values)-1]
-        avgValue = np.sum(self.estimate_values) / self.fps
-        return avgValue
-
+    def __calculateAverageValue(self):
+        if len(self.area_percentages) > 0:
+            self.area_average_percentage = np.sum(self.area_percentages) / len(self.area_percentages)
+        
+    def __clear_area_percentages(self):
+        if len(self.area_percentages) > 0:
+            self.area_percentages = [self.area_percentages[len(self.area_percentages) - 1]]
 
     def calculate_hand_histogram(self, frame):
         hsv_frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
@@ -92,26 +88,22 @@ class hand_tracker:
             roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.hand_rect_one_x[i]:self.hand_rect_one_x[i] + 10,
                                             self.hand_rect_one_y[i]:self.hand_rect_one_y[i] + 10]
 
-        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 226])
+        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
         self.hand_hist = cv.normalize(self.hand_hist, self.hand_hist, 0, 255, cv.NORM_MINMAX)
         
         self.is_hand_hist_created = True
 
-    def subtractBackgroundFromFrame(self ,fg_frame , threshhold):
-        
-        h = fg_frame.shape[0]
-        w = fg_frame.shape[1]
+    def subtractBackgroundFromFrame(self , fg_frame, kernel = (7,7), threshold = 150, iters = 1):
         
         fg_frame_gray = cv.cvtColor(fg_frame, cv.COLOR_BGR2GRAY)
         bg_frame_gray = cv.cvtColor(self.bgFrame, cv.COLOR_BGR2GRAY)
 
         newFrame = np.square(fg_frame_gray - bg_frame_gray)
         
-        _,thresh = cv.threshold(newFrame,50,255,cv.THRESH_BINARY)
+        _,thresh = cv.threshold(newFrame,threshold,255,cv.THRESH_BINARY)
         
-        kernel = np.ones((10,10),np.uint8)
-        thresh=cv.morphologyEx(thresh,cv.MORPH_CLOSE,kernel)
-        thresh=cv.morphologyEx(thresh,cv.MORPH_OPEN,kernel)
+        thresh=cv.morphologyEx(thresh,cv.MORPH_CLOSE, kernel, iterations=iters)
+        thresh=cv.morphologyEx(thresh,cv.MORPH_OPEN, kernel)
         
         thresh = cv.merge((thresh, thresh, thresh))
         
@@ -205,8 +197,11 @@ class hand_tracker:
         
             #cv.putText(frame, "Tip count : " + str(self.tip_cnt), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
 
-    def process(self, frame, interpolate=True):
-        self.hist_mask_image = self.subtractBackgroundFromFrame(frame , 150)
+    def process(self, frame, kernel, threshold, iters, interpolate=True):
+        
+        self._last_frame_counter +=1
+        
+        self.hist_mask_image = self.subtractBackgroundFromFrame(frame, kernel=kernel, threshold=threshold, iters = iters)
         self.hist_mask_image = self.__get_hist_mask(self.hist_mask_image, self.hand_hist)
 
         self.hist_mask_image = cv.erode(self.hist_mask_image, None, iterations=2)
@@ -215,7 +210,7 @@ class hand_tracker:
         self.contour_list = self.__get_contours(self.hist_mask_image)
         
         if len(self.contour_list) <= 0:
-            return
+            return False
         
         self.hand_contour = max(self.contour_list, key=cv.contourArea)
         
@@ -227,27 +222,26 @@ class hand_tracker:
             
             contour_area = cv.contourArea(self.hand_contour)
             hull_area = cv.contourArea(cv.convexHull(self.hand_contour))
-            
-            if self.hull_area > 0 and interpolate:
-                self.hull_area = (self.hull_area + hull_area) / 2
-            else:
-                self.hull_area = hull_area
-            
-            if self.contour_area > 0 and interpolate:
-                self.contour_area = (self.contour_area + contour_area) / 2
-            else:
-                self.contour_area = contour_area
 
-            self.__appendValueToAvgList(contour_area/hull_area)
+            self.area_percentages.append(contour_area/hull_area)
+            
+            if self._last_frame_counter >= self.averaging_fps_threshold:
+                self.__calculateAverageValue()
+                self.__clear_area_percentages()
+            
             cv.putText(frame, "current : " + str(contour_area/hull_area), (0, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
-            cv.putText(frame, "average : " + str(self.calculateAverageValue()), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
+            cv.putText(frame, "average : " + str(self.area_average_percentage), (0, 200), cv.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv.LINE_AA)
            
 
-            self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)
+            #self.far_point = self.__get_farthest_point(defects, self.hand_contour, self.hand_center)
             self.tips, self.tip_cnt = self.__get_tips(defects, self.hand_contour)
             
+            """
             if len(self.far_points_history) < 10:
                 self.far_points_history.append(self.far_point)
             else:
                 self.far_points_history.pop(0)
                 self.far_points_history.append(self.far_point)
+                """
+            
+            return True

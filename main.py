@@ -17,6 +17,12 @@ class Runner:
             'rotating': 2,
             'scale': 3
         }
+        
+        self.kernel_size = 7
+        self.kernel = np.ones((self.kernel_size,self.kernel_size),np.uint8)
+        self.iters = 1
+        
+        self.threshold = 150
 
         self.window_name = 'Photo Editor'
 
@@ -60,9 +66,6 @@ class Runner:
         return arr
 
     def process_editting_input(self, camera_frame):
-        
-        if keyboard.is_pressed("v"):
-            cv2.imshow("subtractor", self.ht.subtractBackgroundFromFrame(camera_frame,150))
             
         if keyboard.is_pressed("f"):
             
@@ -94,13 +97,13 @@ class Runner:
             
     def draw_gizmos(self, camera_frame):
         #ht.draw_farthestpoint(frame, [0, 255, 255])
-        
-        cv2.putText(camera_frame, "Gesture : " + self.ge.estimate_from_area(self.ht.calculateAverageValue()), (0, 250), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
+        if keyboard.is_pressed("v"):
+            cv2.imshow("subtractor", self.ht.subtractBackgroundFromFrame(camera_frame, kernel=self.kernel, threshold=self.threshold, iters = self.iters))
         
         self.ht.draw_tips(camera_frame, [255, 0, 255])
         self.ht.draw_convex_hull(camera_frame)
         self.ht.draw_contours(camera_frame)
-        self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
+        #self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
 
     def main(self):
         
@@ -110,6 +113,30 @@ class Runner:
         _, camera_frame = self.capture.read()
         camera_frame = cv2.flip(camera_frame, 1)
         
+        if keyboard.is_pressed("1"):
+            
+            self.kernel_size += 1
+            self.kernel = np.ones((self.kernel_size,self.kernel_size),np.uint8)
+        
+            
+        elif keyboard.is_pressed("2"):
+            self.kernel_size -= 1
+            if self.kernel_size <= 0:
+                self.kernel_size = 0
+            self.kernel = np.ones((self.kernel_size,self.kernel_size),np.uint8)
+            
+        if keyboard.is_pressed("3"):
+            self.threshold += 1
+        elif keyboard.is_pressed("4"):
+            self.threshold -= 1
+            
+        if keyboard.is_pressed("5"):
+            self.iters += 1
+        elif keyboard.is_pressed("6"):
+            self.iters -= 1
+            if self.iters <= 0:
+                self.iters = 0
+        
         # Reset
         if keyboard.is_pressed("r"):
             self.ht = hand_tracker(camera_frame)
@@ -117,10 +144,9 @@ class Runner:
         # Process frame
         elif self.ht.is_hand_hist_created and self.ht.bgFrame is not None:
             
-            self.ht.process(camera_frame, interpolate = False)
-            
-            self.draw_gizmos(camera_frame)
-            self.process_editting_input(camera_frame)
+            if self.ht.process(camera_frame, self.kernel, self.threshold, self.iters):
+                self.draw_gizmos(camera_frame)
+                self.process_editting_input(camera_frame)
             
         # Prepare calibration
         else:
