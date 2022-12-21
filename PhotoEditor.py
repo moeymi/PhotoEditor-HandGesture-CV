@@ -41,7 +41,6 @@ class photo_editor:
         height = int(img.shape[0] * scale_percentage_y)
         dim = (width, height)
         resized = cv.resize(img,dim,interpolation = cv.INTER_AREA)
-        cv.imshow("resize" ,  resized)
         self.current_image = resized
         
         return self.current_image
