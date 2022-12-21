@@ -69,4 +69,7 @@ class photo_editor:
     
     def scale_brush (self , scale) :
         self.brush_size *= scale
+
+    def change_bruch_color(self , newColor) :
+        self.brush_color = newColor
     

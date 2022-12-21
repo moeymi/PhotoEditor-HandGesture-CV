@@ -3,6 +3,7 @@ import numpy as np
 import keyboard
 import regex as re
 import math
+from datetime import datetime
 
 from HandTracking import hand_tracker
 from GestureEstimator import gesture_estimator
@@ -133,7 +134,7 @@ class Runner:
             self.rotate_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
             self.editted_image = self.pe.rotate(self.editted_image,math.radians(self.rotate_vec[0] * 360))
 
-        elif self.ge.predicted_gesture == 6:
+        elif self.ge.predicted_gesture == 'brush_size':
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -141,6 +142,9 @@ class Runner:
             self.scale_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
             self.scale_vec = [1 + w for w in self.scale_vec]
             self.pe.scale_brush(self.scale_vec[0])
+
+        elif self.ge.predicted_gesture == 'save':
+            self.__save_editted_image()
             
     def load_config(self):
         self.image_dir, camera_ind = self.gui.load(self.get_cameras_indices())
@@ -197,6 +201,13 @@ class Runner:
             self.iters -= 1
             if self.iters <= 0:
                 self.iters = 0
+
+    def __save_editted_image(self):
+        now = datetime.now()
+        dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
+        filename = dt_string + "." + self.image_dir.split('.')[-1]
+        print(filename)
+        cv2.imwrite(filename , self.editted_image)
 
     def main(self):
         
