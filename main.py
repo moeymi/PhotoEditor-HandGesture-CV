@@ -18,9 +18,9 @@ class Runner:
             'scale': 3
         }
         
-        self.kernel_size = 7
+        self.kernel_size = 8
         self.kernel = np.ones((self.kernel_size,self.kernel_size),np.uint8)
-        self.iters = 1
+        self.iters = 2
         
         self.threshold = 150
 

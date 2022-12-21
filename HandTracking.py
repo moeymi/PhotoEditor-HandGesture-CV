@@ -189,7 +189,7 @@ class hand_tracker:
                 cnt = cnt+1
             return tips, cnt
         
-        return None, None
+        return [], 0
         
     def draw_tips(self, frame, color):
         if self.tips is not None:
