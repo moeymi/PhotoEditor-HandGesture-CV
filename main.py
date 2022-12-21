@@ -107,21 +107,12 @@ class Runner:
         self.ht.draw_convex_hull(camera_frame)
         self.ht.draw_contours(camera_frame)
         #self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
-
-    def main(self):
         
-        self.camera_frame = self.capture.read()
-        self.editted_image = self.org_img
-        
-        _, camera_frame = self.capture.read()
-        camera_frame = cv2.flip(camera_frame, 1)
-        
+    def process_tuning_input(self):
         if keyboard.is_pressed("1"):
             
             self.kernel_size += 1
             self.kernel = np.ones((self.kernel_size,self.kernel_size),np.uint8)
-        
-            
         elif keyboard.is_pressed("2"):
             self.kernel_size -= 1
             if self.kernel_size <= 0:
@@ -139,14 +130,24 @@ class Runner:
             self.iters -= 1
             if self.iters <= 0:
                 self.iters = 0
+
+    def main(self):
+        
+        self.camera_frame = self.capture.read()
+        self.editted_image = self.org_img
+        
+        _, camera_frame = self.capture.read()
+        camera_frame = cv2.flip(camera_frame, 1)
+        
         
         # Reset
         if keyboard.is_pressed("r"):
             self.ht = hand_tracker(camera_frame)
+        
             
         # Process frame
         elif self.ht.is_hand_hist_created and self.ht.bgFrame is not None:
-            
+            self.process_tuning_input()
             if self.ht.process(camera_frame, self.kernel, self.threshold, self.iters):
                 self.draw_gizmos(camera_frame)
                 self.process_editting_input(camera_frame)
@@ -155,14 +156,13 @@ class Runner:
         else:
             if self.ht.bgFrame is not None:
                 self.ht.draw_rect(camera_frame)
-                
                 if keyboard.is_pressed("z"):
                     self.ht.calculate_hand_histogram(camera_frame)
             else:
                 self.ht.show_save_bg(camera_frame)
-                
                 if keyboard.is_pressed("s"):
                     self.ht.saveBg_frame(camera_frame)
+                    
         self.render_window(camera_frame)
 
     def destroy(self):

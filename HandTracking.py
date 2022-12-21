@@ -22,8 +22,8 @@ class hand_tracker:
         self.bgFrame = None
         
         self.hand_rect_one_x = np.array(
-            [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 9 * self.__rows / 20, 12 * self.__rows / 20,
-            12 * self.__rows / 20, 12 * self.__rows / 20], dtype=np.uint32)
+            [6 * self.__rows / 20, 6 * self.__rows / 20, 6 * self.__rows / 20, 8 * self.__rows / 20, 8 * self.__rows / 20, 8 * self.__rows / 20, 10 * self.__rows / 20,
+            10 * self.__rows / 20, 10 * self.__rows / 20], dtype=np.uint32)
 
         self.hand_rect_one_y = np.array(
             [9 * self.__cols / 20, 10 * self.__cols / 20, 11 * self.__cols / 20, 9 * self.__cols / 20, 10 * self.__cols / 20, 11 * self.__cols / 20, 9 * self.__cols / 20,
@@ -52,7 +52,7 @@ class hand_tracker:
         for i in range(self.total_rectangle):
             cv.rectangle(frame, (self.hand_rect_one_y[i], self.hand_rect_one_x[i]),
                         (self.hand_rect_two_y[i], self.hand_rect_two_x[i]),
-                        (0, 255, 0), 1)
+                        (0, 255, 0), 2)
             
     def show_save_bg(self, frame):
         cv.putText(frame, "Press S to save background", (100, 50), cv.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv.LINE_AA)
@@ -82,13 +82,14 @@ class hand_tracker:
 
     def calculate_hand_histogram(self, frame):
         hsv_frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+        
         roi = np.zeros([90, 10, 3], dtype=hsv_frame.dtype)
 
         for i in range(self.total_rectangle):
             roi[i * 10: i * 10 + 10, 0: 10] = hsv_frame[self.hand_rect_one_x[i]:self.hand_rect_one_x[i] + 10,
                                             self.hand_rect_one_y[i]:self.hand_rect_one_y[i] + 10]
 
-        self.hand_hist = cv.calcHist([roi], [0, 1], None, [180, 256], [0, 180, 0, 256])
+        self.hand_hist = cv.calcHist([roi], [0, 1], None, [32, 8], [0, 180, 0, 256])
         self.hand_hist = cv.normalize(self.hand_hist, self.hand_hist, 0, 255, cv.NORM_MINMAX)
         
         self.is_hand_hist_created = True
