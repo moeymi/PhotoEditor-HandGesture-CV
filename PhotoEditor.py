@@ -15,24 +15,24 @@ class photo_editor:
     def translate(self, img, normalized_vec):
         rows,cols,_ = img.shape
         
-        trans_vec = np.multiply(normalized_vec,img[:, :, 0].shape).astype(int)
+        self.current_image = img
+        
+        trans_vec = (self.current_image.shape[1] * normalized_vec[0], normalized_vec[1] * self.current_image.shape[0])
         
         M = np.float32([[1,0,trans_vec[0]],[0,1,trans_vec[1]]])
         dst = cv.warpAffine(img,M,(cols,rows))
         
-        self.current_image = dst
-        self.no_drawing_image = dst
+        self.current_image = dst.copy()
         
         return self.current_image
 
-    def rotate(self,img,angle):
+    def rotate(self, img, angle):
         (h,w) = img.shape[:2]
         center = (w/2,h/2)
         M = cv.getRotationMatrix2D(center=center,angle=angle,scale=1.0)
         rotated = cv.warpAffine(img, M, (w, h))
         
         self.current_image = rotated
-        self.no_drawing_image = rotated
         
         return self.current_image
     
@@ -43,7 +43,6 @@ class photo_editor:
         resized = cv.resize(img,dim)
         
         self.current_image = resized
-        self.no_drawing_image = resized
         
         return self.current_image
     
@@ -54,22 +53,16 @@ class photo_editor:
     
     def draw(self, img, point):
         self.current_image = img
-        
-        if self.no_drawing_image is None:
-            self.no_drawing_image = img.copy()
             
         cv.circle(self.current_image, point, self.brush_size, self.brush_color, -1)
         return self.current_image
     
-    def erase(self, img, point):
+    def erase(self, img, no_draw_img, point):
         self.current_image = img
         
         point = tuple(x - self.brush_size for x in point)
         
-        if self.no_drawing_image is None:
-            self.no_drawing_image = img.copy()
-        
-        crop_original = self.no_drawing_image[point[1]:(point[1] + 2 * self.brush_size), point[0]:(point[0]+ 2 * self.brush_size)]
+        crop_original = no_draw_img[point[1]:(point[1] + 2 * self.brush_size), point[0]:(point[0]+ 2 * self.brush_size)]
         
         self.current_image[point[1]:(point[1] + 2 * self.brush_size), point[0]:(point[0]+ 2 * self.brush_size)] = crop_original
         

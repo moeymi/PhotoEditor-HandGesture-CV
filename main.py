@@ -25,8 +25,10 @@ class Runner:
         self.threshold = 150
 
         self.window_name = 'Photo Editor'
+        
+        self.trans_vec = None
 
-        self.camera_frame_width = 600 # Height is auto calculated based on aspect ratio
+        self.camera_frame_width = 320 # Height is auto calculated based on aspect ratio
         self.camera_frame_x_offset = self.camera_frame_y_offset = 20
 
         self.ge = self.pe = self.ht = self.hh = None
@@ -46,18 +48,18 @@ class Runner:
             if keyboard.is_pressed("v"):
                 camera_frame = self.ht.substraction_mask
                 
-            asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
-            camera_frame_height = int(self.camera_frame_width * asp_ratio)
-            camera_frame = cv2.resize(camera_frame, (self.camera_frame_width, camera_frame_height))
             
             show_img = self.editted_image.copy()
-            
-                
             show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
+
 
             self.cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
                 int((self.ht.hand_center[1]  / camera_frame.shape[0])* self.editted_image.shape[0]))  
             cv2.circle(show_img, self.cursor_pos, 10, self.pe.brush_color, thickness=2, lineType=8, shift=0)
+                        
+            asp_ratio = camera_frame.shape[0] / camera_frame.shape[1]
+            camera_frame_height = int(self.camera_frame_width * asp_ratio)
+            camera_frame = cv2.resize(camera_frame, (self.camera_frame_width, camera_frame_height))
 
             cv2.imshow(self.window_name, show_img)
             cv2.waitKey(1)
@@ -75,28 +77,31 @@ class Runner:
             index += 1
         return arr
 
-    def process_editting_input(self, camera_frame):   
-        if not self.ge.is_clicked:
-            return     
+    def process_editting_input(self, camera_frame):
+        if not keyboard.is_pressed('f'):
+            self.org_img = self.editted_image
+            self.start_center = 0
+            
+            if self.trans_vec is not None:
+                self.no_drawing_image = self.pe.translate(self.no_drawing_image, self.trans_vec)
+                
+            self.trans_vec = None
+            return   
+        self.editted_image = self.org_img
+        
         if self.ge.predicted_gesture == 1:
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
             
-            trans_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
-            self.editted_image = self.org_img
-            self.editted_image = self.pe.translate(self.editted_image, trans_vec)
+            self.trans_vec = self.hh.calculate_translation_normalized(self.start_center, self.ht.hand_center, camera_frame.shape)
+            self.editted_image = self.pe.translate(self.editted_image, self.trans_vec)
             
         elif self.ge.predicted_gesture == 2:
-            self.editted_image = self.org_img
             self.editted_image = self.pe.draw(self.editted_image, self.cursor_pos)
             
         elif self.ge.predicted_gesture == 3:
-            self.editted_image = self.org_img
-            self.editted_image = self.pe.erase(self.editted_image, self.cursor_pos)
-        else:
-            self.org_img = self.editted_image
-            self.start_center = 0
+            self.editted_image = self.pe.erase(self.editted_image, self.no_drawing_image, self.cursor_pos)
             
     def load_config(self):
         image_dir, camera_ind = self.gui.load(self.get_cameras_indices())
@@ -111,6 +116,8 @@ class Runner:
         
         self.ht = hand_tracker(frame)
         self.org_img = cv2.imread(image_dir)
+        self.editted_image = self.org_img
+        self.no_drawing_image = self.org_img.copy()
         
         return True
             
@@ -151,7 +158,6 @@ class Runner:
     def main(self):
         
         self.camera_frame = self.capture.read()
-        self.editted_image = self.org_img
         
         _, camera_frame = self.capture.read()
         camera_frame = cv2.flip(camera_frame, 1)
