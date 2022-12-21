@@ -32,6 +32,7 @@ class Runner:
         self.ge = self.pe = self.ht = self.hh = None
 
         self.start_center = 0
+        self.cursor_pos = (0,0)
         
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
         cv2.setWindowProperty(self.window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -54,9 +55,9 @@ class Runner:
                 
             show_img[self.camera_frame_y_offset:self.camera_frame_y_offset+camera_frame.shape[0], self.camera_frame_x_offset:self.camera_frame_x_offset+camera_frame.shape[1]] = camera_frame
 
-            cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
+            self.cursor_pos = (int((self.ht.hand_center[0] / camera_frame.shape[1]) * self.editted_image.shape[1]), 
                 int((self.ht.hand_center[1]  / camera_frame.shape[0])* self.editted_image.shape[0]))  
-            cv2.circle(show_img, cursor_pos, 10, self.pe.brush_color, thickness=2, lineType=8, shift=0)
+            cv2.circle(show_img, self.cursor_pos, 10, self.pe.brush_color, thickness=2, lineType=8, shift=0)
 
             cv2.imshow(self.window_name, show_img)
             cv2.waitKey(1)
@@ -74,9 +75,10 @@ class Runner:
             index += 1
         return arr
 
-    def process_editting_input(self, camera_frame):
-            
-        if keyboard.is_pressed("f"):
+    def process_editting_input(self, camera_frame):   
+        if not self.ge.is_clicked:
+            return     
+        if self.ge.predicted_gesture == 1:
             
             if self.start_center == 0:
                 self.start_center = self.ht.hand_center
@@ -85,13 +87,13 @@ class Runner:
             self.editted_image = self.org_img
             self.editted_image = self.pe.translate(self.editted_image, trans_vec)
             
-        elif keyboard.is_pressed("g"):
+        elif self.ge.predicted_gesture == 2:
             self.editted_image = self.org_img
-            self.editted_image = self.pe.draw(self.editted_image, (int(self.editted_image.shape[1] / 2), int(self.editted_image.shape[0] / 2)))
+            self.editted_image = self.pe.draw(self.editted_image, self.cursor_pos)
             
-        elif keyboard.is_pressed("h"):
+        elif self.ge.predicted_gesture == 3:
             self.editted_image = self.org_img
-            self.editted_image = self.pe.erase(self.editted_image, (int(self.editted_image.shape[1] / 2), int(self.editted_image.shape[0] / 2)))
+            self.editted_image = self.pe.erase(self.editted_image, self.cursor_pos)
         else:
             self.org_img = self.editted_image
             self.start_center = 0
@@ -120,6 +122,7 @@ class Runner:
         self.ht.draw_contours(camera_frame)
         
         cv2.putText(camera_frame, str(self.ge.predicted_gesture) ,(30, 100), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 255, 255) , 2, cv2.LINE_AA)
+        cv2.putText(camera_frame, "IS CLICKED = " + str(self.ge.is_clicked) ,(10, 130), cv2.FONT_HERSHEY_SIMPLEX,1, (255, 0, 0) , 2, cv2.LINE_AA)
         #self.ht.draw_farthestpoint(camera_frame, [255, 0, 255])
         
     def process_tuning_input(self):

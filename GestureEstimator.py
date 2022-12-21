@@ -24,7 +24,9 @@ class gesture_estimator:
         
         self.frame_counter = 0
         
-        self.predicted_gesture = 'zero'
+        self.predicted_gesture = 0
+
+        self.is_clicked = False 
         
         self.timer  = timeit.default_timer()
     
@@ -66,7 +68,12 @@ class gesture_estimator:
         
         if timeit.default_timer() - self.timer >= 2.5:
             self.timer = timeit.default_timer() 
-            self.predicted_gesture = np.bincount(np.array(self.__previous_gestures)).argmax()
+            max_index = np.bincount(np.array(self.__previous_gestures)).argmax()
+            if max_index ==0 :
+                self.is_clicked = True
+            else: 
+                self.predicted_gesture = np.bincount(np.array(self.__previous_gestures)).argmax()
+                self.is_clicked = False
             self.__previous_gestures = [gesture]
             
         return gesture
